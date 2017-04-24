@@ -1,0 +1,67 @@
+---
+title: "Regression Project"
+author: "Brandon Harden, Julie Fisher, Karelys Osuana, Mingjian Shi"
+date: "April 23, 2017"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+comm_prop <- tbl_df(read_csv("comm_prop.csv"))
+```
+
+# Examination of dataset
+
+For our initial examination of the data, we looked at the number of rows and columns, the variable names, a sample of the first five rows, and some basic statistics (min, max, mean, median, and IQR info).
+
+
+```{r examination}
+dim(comm_prop)
+names(comm_prop)
+head(comm_prop)
+summary(comm_prop)
+```
+
+## Data Clean
+
+This review showed that the variable 'W2MiDT' is a factor. We converted the 0 and 1 results to 'Yes' and 'No'.
+
+```{r createfactor}
+comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", 'Yes'))
+show(comm_prop$W2MiDT)
+```
+
+## Visual Representation
+
+Next we created visual representations to get a feel for the distribution of the data.
+
+```{r}
+hist(comm_prop$RentRate, xlab = "Rent Rate", main = paste("Rent Rate (In Thousands)"), col = "indianred")
+
+hist(comm_prop$Age, xlab = "Age", main = paste("Age"), col = "indianred")
+
+hist(comm_prop$OperExp, xlab = "Total Monthly Operating Expenses", main = paste("Total Monthly Operating Expenses (In Thousands)"), col = "indianred")
+
+hist(comm_prop$VacRate, xlab = "Vacancy Rate", main = paste("Vacancy Rate"), col = "indianred")
+
+hist(comm_prop$SqFt, xlab = "Total Square Footage", main = paste("Total Square Footage"), col = "indianred") 
+  
+hist(comm_prop$Taxes, xlab = "Taxes", main = paste("Total Monthly Tax Expense (In Thousands)"), col = "indianred")
+
+ggplot(comm_prop$W2MiDT) +
+  stat_boxplot(geom = "errorbar", width = 0.5) +
+  geom_boxplot() +
+  coord_flip() + # Makes regions names easier to read
+  labs(x = "Region", y = "Birth Rate")
+
+hist(comm_prop$W2MiDT, xlab = "Building Located Within 2 Miles of Downtown", main = paste("Location"), col = "indianred")
+
+pairs(comm_prop[,1:6], pch = 16)
+```
+# Correlations for continuous variables
+```{r}
+cor(comm_prop[,1:6])
+```
+
