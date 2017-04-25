@@ -12,7 +12,7 @@ summary(comm_prop)
 
 
 # The variable 'W2MiDT' is a factor. Convert it into a factor
-comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", "Yes"))
+comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, levels = c(0, 1), labels = c("No", "Yes"))
 show(comm_prop$W2MiDT)
 
 
