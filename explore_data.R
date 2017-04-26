@@ -43,12 +43,14 @@ hist(comm_prop$Taxes, xlab = "Taxes", main = paste("Histogram of", "Total Monthl
 #                            ------------ Building Location ------------------
  #     ****** 'Building Location' is a factor and thus requires a BoxPlot to view it's distribution *********
 
-ggplot(comm_prop$W2MiDT) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot() +
-  coord_flip() + # Makes regions names easier to read
-  labs(x = "Region", y = "Birth Rate")
-hist(comm_prop$W2MiDT, xlab = "Building Located Within 2 Miles of Downtown", main = paste("Histogram of", "Age"), col = "indianred")
+# ggplot(comm_prop$W2MiDT) +
+ # stat_boxplot(geom = "errorbar", width = 0.5) +
+  #geom_boxplot() +
+  #coord_flip() + # Makes regions names easier to read
+  #labs(x = "Region", y = "Birth Rate")
+#hist(comm_prop$W2MiDT, xlab = "Building Located Within 2 Miles of Downtown", main = paste("Histogram of", "Age"), col = "indianred")
+
+plot(comm_prop$W2MiDT, xlab="Location within 2 miles of Downtown", ylab="Frequency")
 
 
 
