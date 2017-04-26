@@ -64,3 +64,7 @@ pairs(comm_prop[,1:6], pch = 16)
 
  # Correlation Matrix - Function{cor}
 cor(comm_prop[,1:6])
+
+# we can see more clear the relations
+library(corrplot)
+corrplot(cor(comm_prop[,1:6]), method="ellipse")
