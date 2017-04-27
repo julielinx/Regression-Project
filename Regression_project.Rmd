@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(tidyverse)
+library(car)
+library(corrplot)
 comm_prop <- tbl_df(read_csv("comm_prop.csv"))
 ```
 
