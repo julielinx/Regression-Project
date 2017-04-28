@@ -1,4 +1,3 @@
-library(car)
 library(tidyverse)
 library(corrplot)
 
@@ -20,13 +19,11 @@ full.df <- fortify(df_model)
 ggplot(full.df, aes(x=.fitted, y=.resid)) +
   geom_point() +
   geom_hline(yintercept=0, linetype=2) +
-  
   labs(x="Fitted Values", y="Residuals")
 
 # Check for normality
 qqPlot(df_model$residuals, pch=16)
 shapiro.test(df_model$residuals)
-
 pairs(comm_prop[-c(4,6)], pch=16)
 
 # Check for NCV

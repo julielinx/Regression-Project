@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(tidyverse)
-library(car)
 library(corrplot)
 comm_prop <- tbl_df(read_csv("comm_prop.csv"))
 ```
@@ -25,16 +24,39 @@ names(comm_prop)
 head(comm_prop)
 summary(comm_prop)
 ```
+## Visualize relationships
 
+Next we created visualizations to see how the variables relate to our variable of interest RentRate.
+
+```{r}
+df.full <- lm(RentRate ~ ., data = comm_prop)
+summary(df.full)
+cor(comm_prop)
+corrplot(cor(comm_prop), method="ellipse")
+```
+## Initial evaluation
+
+From the review of these results, it appears that VacRate, SqFt, and Taxes are all minimally significant. So we removed them and reran the calculations.
+```{r}
+dfLessMin <- lm(RentRate ~ Age + OperExp + W2MiDT, data = comm_prop)
+summary(dfLessMin)
+```
+## Review evaluation
+
+The R^2 and adjusted R^2 showed significant reduction, so we reviewed the variables for multicollinearity and found that SqFt and taxes are highly corelated (over .999). It appears taxes are based mainly on square footage, with possibly some consideration for location. Location is also already addressed by the M2MiDT variable. As such, our group decided to remove Taxes as it appears to be corelated to both SqFt and M2MiDT.
+
+We added SqFt back in and reran the calculations. These calculations show results almost as good as those of all the variables, but a factor of potential overfitting.
+```{r}
+df_model <- lm(RentRate ~ Age + OperExp + W2MiDT + SqFt, data = comm_prop)
+summary(df_model)
+```
 ## Data Clean
-
-This review showed that the variable 'W2MiDT' is a factor. We converted the 0 and 1 results to 'Yes' and 'No'.
+At this point we converted W2MiDT to a factor: 0 to 'No' and 1 'Yes'
 
 ```{r createfactor}
 comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", 'Yes'))
 show(comm_prop$W2MiDT)
 ```
-
 ## Visual Representation
 
 Next we created visual representations to get a feel for the distribution of the data.
@@ -62,8 +84,26 @@ hist(comm_prop$W2MiDT, xlab = "Building Located Within 2 Miles of Downtown", mai
 
 pairs(comm_prop[,1:6], pch = 16)
 ```
-# Correlations for continuous variables
+## Examine residuals, normality, variance, and any other multicollinearity
 ```{r}
-cor(comm_prop[,1:6])
-```
+full.df <- fortify(df_model)
+ggplot(full.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Fitted Values", y="Residuals")
 
+qqPlot(df_model$residuals, pch=16)
+shapiro.test(df_model$residuals)
+pairs(comm_prop[-c(4,6)], pch=16)
+
+ncvTest(df_model)
+
+vif(df_model)
+```
+These results seem to fall with acceptable results. And so we moved on to quality of fit
+```{r}
+ggplot(full.df, aes(x=.fitted, y=RentRate)) +
+  geom_point(size=2) +
+  geom_smooth(method="lm", color="red", lwd=1.5) +
+  labs(x="Rent Predicted", y="Rent Actual")
+```
