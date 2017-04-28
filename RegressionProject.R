@@ -38,3 +38,5 @@ ggplot(full.df, aes(x=.fitted, y=RentRate)) +
   geom_smooth(method="lm", color="red", lwd=1.5) +
   labs(x="Rent Predicted", y="Rent Actual")
 
+new_RentRate <- data.frame(Age=9, OperExp=13, SqFt=40, Taxes=540, W2MiDT='No')
+predict(df_model, newdata=new_RentRate, interval="predict")
