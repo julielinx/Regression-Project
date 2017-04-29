@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(tidyverse)
 library(corrplot)
+library(MASS)
+library(car)
 comm_prop <- tbl_df(read_csv("comm_prop.csv"))
 ```
 
@@ -102,7 +104,7 @@ ggplot(full.df, aes(x=.fitted, y=.resid)) +
   geom_hline(yintercept=0, linetype=2) +
   labs(x="Fitted Values", y="Residuals")
 
-qqPlot(df_model$residuals, pch=16)
+
 shapiro.test(df_model$residuals)
 pairs(comm_prop[-c(4,6)], pch=16)
 
@@ -123,7 +125,7 @@ ggplot(full.df, aes(x=.fitted, y=RentRate)) +
 
 Lastly we use our model to determine a range for what we can charge in rent for our building. The model the vairables available indicates we chould charge between \$12,160.37 and \$16,235.17 per month to rent out the building. Taking into account operating expenses and taxes, we pay \$13,540 to run the building. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we would have to rent the building for over \$13,540, which appears possible, based on the range indicated by the model.
 ```{r}
-new_RentRate <- data.frame(Age=9, OperExp=13, SqFt=40, Taxes=540, W2MiDT='No')
+new_RentRate <- data.frame(Age=9, OperExp=13, VacRate=0, SqFt=40, Taxes=540, W2MiDT='No')
 predict(df_model, newdata=new_RentRate, interval="predict")
 ```
 
@@ -178,8 +180,6 @@ summary(model_7)
 
 predict(model_7, newdata=new_RentRate, interval="predict")
 ```
-
-
 ## Analysis
 
 The models showed generally decreasing p-values, but these reductions were marginal - difference of 0.0088. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The new range to charge for rent is \$13,984.76 - \$17,267.04, which would indicate we should rent out the building as it fully exceeds our break even point of \$13,540.
