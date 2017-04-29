@@ -1,0 +1,187 @@
+---
+title: "Regression Project"
+author: "Brandon Harden, Julie Fisher, Karelys Osuana, Mingjian Shi"
+date: "April 23, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(tidyverse)
+library(corrplot)
+comm_prop <- tbl_df(read_csv("comm_prop.csv"))
+```
+
+# Examination of the data
+
+## Initial review
+
+Our first step was to get a feel for the data. We looked at the dimensions and variable names. With only 100 rows we could have looked at the whole data set using View(), but instead looked at just the first 5 as this is an initial glance and is a good practice with larger data sets. Looking at the first 5 values revealed that the W2MiDT variable is a factor. Before moving on, we made this conversion to continue our analysis.
+
+```{r cars}
+dim(comm_prop)
+names(comm_prop)
+```
+## Size and shape of data
+
+In handling the factor, we made the 0 the 'No' value and 1 the 'Yes' value. Next we determined whether or not there were any missing values. As there are no missing values we don't need to worry about those effecting our results. Knowing there were no missing values, we ran the summary() function to get an idea for the size and shape of the data.
+```{r}
+comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", 'Yes'))
+head(comm_prop)
+sum(is.na(comm_prop))
+summary(comm_prop)
+```
+# Visual representation to understand distrubutions
+
+Next we visualized the data to determine if it is normally distrubuted.These visualiztions revelated that not all variables are normally distrubuted. Age is bimodal; OperExp is left skewed; and VacRate, SqFt, and Taxes are all right skwed. The fact that not all variables are normally distrubuted doesn't invalidate the results of the rest of the analysis, but will impact the oeverall effectiveness of detecting true differences.
+
+```{r pressure, echo=FALSE}
+hist(comm_prop$RentRate, xlab = "Rent Rate", main = paste("Rent Rate (In Thousands)"), col = "indianred")
+
+hist(comm_prop$Age, xlab = "Age", main = paste("Age"), col = "indianred")
+
+hist(comm_prop$OperExp, xlab = "Total Monthly Operating Expenses", main = paste("Total Monthly Operating Expenses (In Thousands)"), col = "indianred")
+
+hist(comm_prop$VacRate, xlab = "Vacancy Rate", main = paste("Vacancy Rate"), col = "indianred")
+
+hist(comm_prop$SqFt, xlab = "Total Square Footage", main = paste("Total Square Footage"), col = "indianred") 
+  
+hist(comm_prop$Taxes, xlab = "Taxes", main = paste("Total Monthly Tax Expense (In Thousands)"), col = "indianred")
+
+ggplot(comm_prop, aes(x=W2MiDT, y=..count..)) +
+  geom_bar()
+```
+# Examine correlations
+
+Next we needed to see how the variables related to each other. To do this we used the pairs() and corrplot() functions to visualize all the interactions and cor() to get numerical representations of these relations. We noticed that cor() only accepts numeric variables and so removed W2MiDT variable for just the functions requiring cor().
+```{r}
+pairs(comm_prop[,1:6], pch = 16)
+numeric_df <- comm_prop[1:6]
+corrplot(cor(numeric_df), method="ellipse")
+cor(numeric_df)
+df.full <- lm(RentRate ~ ., data = comm_prop)
+summary(df.full)
+```
+# Choose outcome variable
+
+The purpose of our analysis is to determine a price range to charge for renting out our building. This corresponds to the variable RentRate.
+
+# Fit a model
+
+## Multicollinearity
+
+When we ran the pairs() and cor() functions we probably should have noticed the .999 corelation of the SqFt and Taxes variables, indicitive of multicollinearity. However, it wasn't until we started removing variables that we noticed the large effect on the efficacy of the model. As such, from the review of the initial results, it appeared that VacRate, SqFt, and Taxes were all minimally significant. So we removed them and reran the calculations to fit a first model.
+
+In removing all three of these variables, the Adjusted R^2 value was reduced from 0.73 down to 0.63. By adding values back in and reruning the caluculations, we discovered the multicollinearity. We chose to keep SqFt instead of Taxes. It appears that in this data, the majority of a calculation for determining taxes is based on square footage. Location, another vairable accounted for in the data set, may also play a role in taxes, which would also cause more discrepancy in our model.
+```{r}
+dfLessMin <- lm(RentRate ~ Age + OperExp + W2MiDT, data = comm_prop)
+summary(dfLessMin)
+```
+## Adjusted model
+
+Having accounted for the effect caused by the multicollinearity, we added SqFt back in and reran the calculations. These calculations show better results than those of all variables combined. The p-values of all included variables are significant and the F-statistic is significantly improved. 
+
+Initial Adjusted R^2: 0.73    Initial F-statistic: 45.61
+New Adjusted R^2: 0.7313      New F-statistic: 68.35
+```{r}
+df_model <- lm(RentRate ~ Age + OperExp + W2MiDT + SqFt, data = comm_prop)
+summary(df_model)
+```
+# Evaluate model
+
+To determine the effacicy of our model, we re-ran calculations to review residuals, normality, variance, and determine if there was any other multicollinearity present in the data.
+
+There was no discernable pattern to the residuals so there doesn't appear to be any issues with normality or variance. There were two points outside the fitted model, that may warrent additional scrutiny to determine a best fit model. 
+
+The age vairable continues to show a bimodal distrubution that appears to break buildings into under and over 10 year old categories. The associations between RentRate and OperExp and SqFt both make sense in that as OperExp and SqFt individually increase so too does the RentRAte. All other results appear to be within an acceptable range.
+```{r}
+full.df <- fortify(df_model)
+ggplot(full.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Fitted Values", y="Residuals")
+
+qqPlot(df_model$residuals, pch=16)
+shapiro.test(df_model$residuals)
+pairs(comm_prop[-c(4,6)], pch=16)
+
+ncvTest(df_model)
+
+vif(df_model)
+```
+## Quality of fit
+
+**How good is the model?**
+```{r}
+ggplot(full.df, aes(x=.fitted, y=RentRate)) +
+  geom_point(size=2) +
+  geom_smooth(method="lm", color="red", lwd=1.5) +
+  labs(x="Rent Predicted", y="Rent Actual")
+```
+# What to Charge
+
+Lastly we use our model to determine a range for what we can charge in rent for our building. The model the vairables available indicates we chould charge between \$12,160.37 and \$16,235.17 per month to rent out the building. Taking into account operating expenses and taxes, we pay \$13,540 to run the building. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we would have to rent the building for over \$13,540, which appears possible, based on the range indicated by the model.
+```{r}
+new_RentRate <- data.frame(Age=9, OperExp=13, SqFt=40, Taxes=540, W2MiDT='No')
+predict(df_model, newdata=new_RentRate, interval="predict")
+```
+
+
+# Final Conclusion
+
+Can somebody else address this one? **Once you have built the final model, it must be evaluated in terms of its usefulness and relevance to the business problem, as well as its interpretability to others who may be interacting with it. Always ensure that it makes sense from the standpoint of the real-world dynamics it is intended to explain.**
+
+# Extra Credit
+
+Of course, to determine if there is a better fit model we would need to account for how all the vairables interacted with each other as well. THe first step is the create a model that reflects all variables and all variables * all variables.
+
+This doesn't create a particularly percise model. While our Adjusted R^2 value has increased to 0.8428, our F-statistic has decreased to 36.38 and there are many variables that aren't significant.
+```{r}
+library(MASS)
+model.full.int <- lm(RentRate ~ (Age + OperExp + VacRate + SqFt + W2MiDT)^2, data=comm_prop) 
+summary(model.full.int)
+ori_pred <- predict(model.full.int, newdata=new_RentRate, interval="predict")
+
+model_all <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + OperExp:W2MiDT + VacRate:SqFt + VacRate:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+```
+## Restrict values
+
+To reduce overfitting and increase our F-statistic, we used stepwise regression and manually removed variables one at a time until all remaining variables had significant p-values.
+```{r}
+model_1 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + OperExp:W2MiDT + VacRate:SqFt + SqFt:W2MiDT, data=comm_prop)
+summary(model_1)
+
+#remove VacRate:SqFt
+model_2 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_2)
+
+#remove OpenExp:SqFt
+model_3 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_3)
+
+#remove Age:SqFt
+model_4 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:W2MiDT + OperExp:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_4)
+
+#remove Age:W2MiDT
+model_5 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + OperExp:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_5)
+
+#remove OpenExp:VacRate
+model_6 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_6)
+
+#remove Age:OpenExp
+model_7 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data=comm_prop)
+summary(model_7)
+
+predict(model_7, newdata=new_RentRate, interval="predict")
+```
+
+
+## Analysis
+
+The models showed generally decreasing p-values, but these reductions were marginal - difference of 0.0088. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The new range to charge for rent is \$13,984.76 - \$17,267.04, which would indicate we should rent out the building as it fully exceeds our break even point of \$13,540.
+
+The updated model has also given us a tighter range. It decrases our initial range of \$4,074.80 down to an updated range of \$3,282.28. A difference of nearly $800.

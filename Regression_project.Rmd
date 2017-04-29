@@ -75,9 +75,7 @@ hist(comm_prop$SqFt, xlab = "Total Square Footage", main = paste("Total Square F
 hist(comm_prop$Taxes, xlab = "Taxes", main = paste("Total Monthly Tax Expense (In Thousands)"), col = "indianred")
 
 ggplot(comm_prop$W2MiDT) +
-  stat_boxplot(geom = "errorbar", width = 0.5) +
-  geom_boxplot() +
-  coord_flip() + # Makes regions names easier to read
+  stat_histogram() +
   labs(x = "Region", y = "Birth Rate")
 
 hist(comm_prop$W2MiDT, xlab = "Building Located Within 2 Miles of Downtown", main = paste("Location"), col = "indianred")
