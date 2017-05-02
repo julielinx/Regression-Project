@@ -96,12 +96,6 @@ summary(mod2)
 
 
 # Plot the fit
-mod2.df <- fortify(mod2)
-ggplot(mod2.df, aes(x=.fitted, y=RentRate)) +
-  geom_point(size=2) +
-  geom_smooth(method="lm", color="red", lwd=1.5) +
-  labs(x="Sales Predicted", y="Sales Actual")
-
 # Examine Models' Residuals's Variance & Distribution
 ggplot(mod2.df, aes(x=.fitted, y=.resid)) +
   geom_point() +
@@ -131,6 +125,60 @@ model_all <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp
 summary(model_all)
 
 
+
+
+
+
+# Stepwise Regression
+library(MASS)
+mod_step <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + 
+                 Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + 
+                 OperExp:W2MiDT + VacRate:SqFt + VacRate:W2MiDT + SqFt:W2MiDT, data = comm_prop)
+stepAIC(mod_step, direction = 'backward')
+
+# Suggested lm model:
+#lm(formula = RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + 
+#Age:OperExp + Age:VacRate + OperExp:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data = comm_prop)
+
+
+# Create linear model object from suggested variables and conduct summary
+mod_step2 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + 
+                     Age:OperExp + Age:VacRate + OperExp:VacRate + OperExp:W2MiDT + 
+                     SqFt:W2MiDT, data = comm_prop)
+summary(mod_step2)
+
+
+
+# Visually & Formally test stepwise model's Variance and Distributuion of Residuals
+mod_step.df <- fortify(mod_step2)
+ggplot(mod_step.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Sales Predicted", y="Sales Actual")
+# Good Variance
+
+
+shapiro.test(mod_step2$residuals)
+
+ncvTest(mod_step2)
+
+vif(mod_step2)
+
+# Fit
+ggplot(mod_step2, aes(x=.fitted, y=RentRate)) +
+  geom_point(size=2) +
+  geom_smooth(method="lm", color="red", lwd=1.5) +
+  labs(x="Rent Predicted", y="Rent Actual")
+
+
+# From the summary of the model using the suggested variables we see that out of the first order 
+# terms used in our initial linear model (mod2), VacRate has an insignificant p-value suggesting us to include it in
+# our final model . Compared to our initial linear model based on manually interating by p-values of 
+# single order terms, we know that we do not want to include the variable VacRate. Also, even thought the 
+# Adjusted R-Squared value increased, the Multiple R-Squared value increased as well which is a sign of 
+# our model still containing unwanted variables.
+
+
 # Create Model and then run a 'All Substs Regression' (ASR)
 library(leaps)
 subsets <-regsubsets(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + 
@@ -143,9 +191,28 @@ plot(subsets, scale = 'adjr2' )
 # VacRate:W2MiDT + Interate another ASR Model (Include Lower Order Terms)
 
 # Create liniar model from recommended variables
-mod_lm_subset1 <- lm(RentRate ~ Age + OperExp + W2MiDT + VacRate + SqFt + Age:OperExp + 
+mod_lm_subset1 <- lm(RentRate ~ Age + OperExp + W2MiDT + Age:OperExp + 
                        Age:VacRate + Age:SqFt + OperExp:W2MiDT+ SqFt:W2MiDT, data = comm_prop)
 summary(mod_lm_subset1)
+
+
+# Visually & Formally test stepwise model's Variance and Distributuion of Residuals
+mod_sub.df <- fortify(mod_lm_subset1)
+ggplot(mod_step.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Sales Predicted", y="Sales Actual")
+# Good Variance
+
+
+shapiro.test(mod_lm_subset1$residuals)
+
+ncvTest(mod_lm_subset1)
+
+vif(mod_lm_subset1)
+
+
+
 # The following variables would be eliminated due to possessing insignificant P-values. 
 # Even though the Adjusted R-Squared increased (.8414),  the Mult. R=Squared valued increased (.8574)
 # as well as the F-Statistic decreasing concluding that there are variables present 
@@ -153,14 +220,3 @@ summary(mod_lm_subset1)
 #                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Eliminate: VacRate, SqFt, Age:W2MiDT, OperExp:VacRate, OperExp:SqFt, VacRate:SqFt,
 # VacRate:W2MiDT + Interate another ASR Model (Include Lower Order Terms)
-
-
-
-# Stepwise Regression
-library(MASS)
-mod_step <- lm(RentRate ~ .*., data = comm_prop)
-stepAIC(mod_step, direction = 'backward')
-
-# Suggested lm model:
-# lm(formula = RentRate ~ Age + OperExp + VacRate + Taxes + W2MiDT + Age:OperExp + 
-# Age:VacRate + OperExp:VacRate + OperExp:W2MiDT + Taxes:W2MiDT, data = comm_prop)
