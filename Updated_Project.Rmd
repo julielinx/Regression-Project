@@ -37,7 +37,7 @@ summary(comm_prop)
 ```
 # Visual representation to understand distrubutions
 
-Next we visualized the data to determine if it is normally distrubuted.These visualiztions revelated that not all variables are normally distrubuted. Age is bimodal; OperExp is left skewed; and VacRate, SqFt, and Taxes are all right skwed. The fact that not all variables are normally distrubuted doesn't invalidate the results of the rest of the analysis, but will impact the oeverall effectiveness of detecting true differences.
+Next we visualized the data to determine if it is normally distributed.These visualizations reveled that not all variables are normally distributed. Age is bi-modal; OperExp is left skewed; and VacRate, SqFt, and Taxes are all right skewed. The fact that not all variables are normally distributed doesn't invalidate the results of the rest of the analysis, but will impact the overall effectiveness of detecting true differences.
 
 ```{r pressure, echo=FALSE}
 hist(comm_prop$RentRate, xlab = "Rent Rate", main = paste("Rent Rate (In Thousands)"), col = "indianred")
@@ -74,9 +74,9 @@ The purpose of our analysis is to determine a price range to charge for renting 
 
 ## Multicollinearity
 
-When we ran the pairs() and cor() functions we probably should have noticed the .999 corelation of the SqFt and Taxes variables, indicitive of multicollinearity. However, it wasn't until we started removing variables that we noticed the large effect on the efficacy of the model. As such, from the review of the initial results, it appeared that VacRate, SqFt, and Taxes were all minimally significant. So we removed them and reran the calculations to fit a first model.
+When we ran the pairs() and cor() functions we probably should have noticed the .999 correlation of the SqFt and Taxes variables, indicative of multicollinearity. However, it wasn't until we started removing variables that we noticed the large effect on the efficacy of the model. As such, from the review of the initial results, it appeared that VacRate, SqFt, and Taxes were all minimally significant. So we removed them and reran the calculations to fit a first model.
 
-In removing all three of these variables, the Adjusted R^2 value was reduced from 0.73 down to 0.63. By adding values back in and reruning the caluculations, we discovered the multicollinearity. We chose to keep SqFt instead of Taxes. It appears that in this data, the majority of a calculation for determining taxes is based on square footage. Location, another vairable accounted for in the data set, may also play a role in taxes, which would also cause more discrepancy in our model.
+In removing all three of these variables, the Adjusted R^2 value was reduced from 0.73 down to 0.63. By adding values back in and rerunning the calculations, we discovered the multicollinearity. We chose to keep SqFt instead of Taxes. It appears that in this data, the majority of a calculation for determining taxes is based on square footage. Location, another variable accounted for in the data set, may also play a role in taxes, which would also cause more discrepancy in our model.
 ```{r}
 dfLessMin <- lm(RentRate ~ Age + OperExp + W2MiDT, data = comm_prop)
 summary(dfLessMin)
@@ -93,11 +93,11 @@ summary(df_model)
 ```
 # Evaluate model
 
-To determine the effacicy of our model, we re-ran calculations to review residuals, normality, variance, and determine if there was any other multicollinearity present in the data.
+To determine the efficacy of our model, we re-ran calculations to review residuals, normality, variance, and determine if there was any other multicollinearity present in the data.
 
-There was no discernable pattern to the residuals so there doesn't appear to be any issues with normality or variance. There were two points outside the fitted model, that may warrent additional scrutiny to determine a best fit model. 
+There was no discernible pattern to the residuals so there doesn't appear to be any issues with normality or variance. There were two points outside the fitted model, that may warrant additional scrutiny to determine a best fit model. 
 
-The age vairable continues to show a bimodal distrubution that appears to break buildings into under and over 10 year old categories. The associations between RentRate and OperExp and SqFt both make sense in that as OperExp and SqFt individually increase so too does the RentRAte. All other results appear to be within an acceptable range.
+The age variable continues to show a bi-modal distribution that appears to break buildings into under and over 10 year old categories. The associations between RentRate and OperExp and SqFt both make sense in that as OperExp and SqFt individually increase so too does the RentRate. All other results appear to be within an acceptable range.
 ```{r}
 full.df <- fortify(df_model)
 ggplot(full.df, aes(x=.fitted, y=.resid)) +
@@ -124,9 +124,9 @@ ggplot(full.df, aes(x=.fitted, y=RentRate)) +
 ```
 ## Extra Credit
 
-Of course, to determine if there is a better fit model we would need to account for how all the vairables interacted with each other as well. The first step is the create a model that reflects all variables and all variable interactions.
+Of course, to determine if there is a better fit model we would need to account for how all the variables interacted with each other as well. The first step is the create a model that reflects all variables and all variable interactions.
 
-This doesn't create a particularly percise model. While our Adjusted R^2 value has increased to 0.8428, our F-statistic has decreased to 36.38 and there are many variables that aren't significant.
+This doesn't create a particularly precise model. While our Adjusted R^2 value has increased to 0.8428, our F-statistic has decreased to 36.38 and there are many variables that aren't significant.
 ```{r}
 model.full.int <- lm(RentRate ~ (Age + OperExp + VacRate + SqFt + W2MiDT)^2, data=comm_prop) 
 summary(model.full.int)
@@ -136,7 +136,7 @@ model_all <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp
 ```
 ## Restrict values manually
 
-To reduce overfitting and increase our F-statistic, we used stepwise regression and manually removed variables one at a time until all remaining variables had significant p-values.
+To reduce over fitting and increase our F-statistic, we used stepwise regression and manually removed variables one at a time until all remaining variables had significant p-values.
 ```{r}
 model_1 <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + OperExp:W2MiDT + VacRate:SqFt + SqFt:W2MiDT, data=comm_prop)
 summary(model_1)
@@ -169,12 +169,12 @@ predict(model_7, newdata=new_RentRate, interval="predict")
 ```
 ## Run backward stepwise regression
 
-We also ran the backward stepwise regression function and examined the results to compare them to our manual version. Interestingly, it came up with slightly different variables. The first noticable change is that the function kept Taxes instead of SqFt. Additionally, it kept Age:OperExp and OperExp:VacRate where our manual model recommended removing them.
+We also ran the backward stepwise regression function and examined the results to compare them to our manual version. Interestingly, it came up with slightly different variables. The first noticeable change is that the function kept Taxes instead of SqFt. Additionally, it kept Age:OperExp and OperExp:VacRate where our manual model recommended removing them.
 
 Manual variables: Age, OperExp, VacRate, SqFt, W2MiDT, Age:VacRate, OperExp:W2MiDT, SqFt:W2MiDT
 stepAIC variables: Age, OperExp, VacRate, Taxes, W2MiDT, Age:OperExp, Age:VacRate, OperExp:VacRate, OperExp:W2MiDT, Taxes:W2MiDT
 
-The result was that the model created by the function had a slightly better adjusted R^2 of 0.844 compared to 0.8358, but a significally worse F-statistic of 54.55 compared to 63.99. As such, we moved forward with our analysis using the model created using the manual method.
+The result was that the model created by the function had a slightly better adjusted R^2 of 0.844 compared to 0.8358, but a significantly worse F-statistic of 54.55 compared to 63.99. As such, we moved forward with our analysis using the model created using the manual method.
 ```{r}
 model_step <- lm(RentRate ~ .*., data = comm_prop)
 stepAIC(model_step, direction = "backward")
@@ -183,9 +183,9 @@ summary(step_lm)
 ```
 ## Model Analysis
 
-The models showed generally decreasing p-values, but these reductions were marginal. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The updated model has also given us a tighter range. It decrases our initial range of \$4,074.80 down to an updated range of \$3,282.28. A difference of nearly $800.
+The models showed generally decreasing p-values, but these reductions were marginal. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The updated model has also given us a tighter range. It decreases our initial range of \$4,074.80 down to an updated range of \$3,282.28. A difference of nearly $800.
 
-An analysis of the residuals shows that there is still no discernable pattern and even shows slightly less clumping than the model created from just single variables. The analysis of variance on both the single variable and manual stepwise models shows good significance. The significance for the OperExp:W2MiDT variable appears to fall outside the range of significance although it was within bounds when running the analysis from the coefficents. The fitted plot shows tighter grouping around the line, but still quite a bit of variance from the prediction.
+An analysis of the residuals shows that there is still no discernible pattern and even shows slightly less clumping than the model created from just single variables. The analysis of variance on both the single variable and manual stepwise models shows good significance. The significance for the OperExp:W2MiDT variable appears to fall outside the range of significance although it was within bounds when running the analysis from the coefficients. The fitted plot shows tighter grouping around the line, but still quite a bit of variance from the prediction.
 ```{r}
 full.df <- fortify(df_model)
 ggplot(full.df, aes(x=.fitted, y=.resid)) +
@@ -225,14 +225,13 @@ summary(stepwise_variables)
 ```
 # What to Charge
 
-Lastly we use our model to determine a range for what we can charge in rent for our building. For this we used the model created by the manual stepwise regression. The model the vairables available indicates we chould charge between \$13,984.76 - \$17,267.04 per month to rent out the building. Taking into account operating expenses and taxes, we pay \$13,540 to run the building. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we could easily rent the building for over \$13,540.
+Lastly we use our model to determine a range for what we can charge in rent for our building. For this we used the model created by the manual stepwise regression. The model indicates we could charge between \$13,984.76 - \$17,267.04 per month to rent out the building. Taking into account that our break even point to run the building is  \$13,540, our model indicates we should rent the space. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we could easily rent the building for over \$13,540.
 ```{r}
 new_RentRate <- data.frame(Age=9, OperExp=13, VacRate=0, SqFt=40, Taxes=540, W2MiDT='No')
 predict(df_model, newdata=new_RentRate, interval="predict")
 ```
-
-
 # Final Conclusion
 
-Can somebody else address this one? **Once you have built the final model, it must be evaluated in terms of its usefulness and relevance to the business problem, as well as its interpretability to others who may be interacting with it. Always ensure that it makes sense from the standpoint of the real-world dynamics it is intended to explain.**
+Our final model explains around 83% of the variability in the data we collected on 100 properties. This should give us a good enough idea on what to charge to rent out the building in order to decide to rent instead of sell. However, there may be other variables we need to take into account in order to establish a better range. One variable that comes to mind is the neighborhood. For example, the desirability of a building in the Gulch is different than in Germantown. The facilities available in the building could also effect the amount charged for rent. For example, whether or not the building be used as a restaurant, store, or solely office space.
 
+In being a statistical model, it would probably need to be explained to a business audience. But the included graphics should serve to illustrate the point.
