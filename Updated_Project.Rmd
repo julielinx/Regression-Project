@@ -29,8 +29,9 @@ names(comm_prop)
 
 In handling the factor, we made the 0 the 'No' value and 1 the 'Yes' value. Next we determined whether or not there were any missing values. As there are no missing values we don't need to worry about those effecting our results. Knowing there were no missing values, we ran the summary() function to get an idea for the size and shape of the data.
 ```{r}
-comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", 'Yes'))
+comm_prop$W2MiDT <- factor(comm_prop$W2MiDT, labels = c("No", "Yes"))
 head(comm_prop)
+ls.str(comm_prop)
 sum(is.na(comm_prop))
 summary(comm_prop)
 ```
@@ -52,7 +53,7 @@ hist(comm_prop$SqFt, xlab = "Total Square Footage", main = paste("Total Square F
 hist(comm_prop$Taxes, xlab = "Taxes", main = paste("Total Monthly Tax Expense (In Thousands)"), col = "indianred")
 
 ggplot(comm_prop, aes(x=W2MiDT, y=..count..)) +
-  geom_bar()
+  geom_bar(fill = "indianred")
 ```
 # Examine correlations
 
@@ -121,33 +122,19 @@ ggplot(full.df, aes(x=.fitted, y=RentRate)) +
   geom_smooth(method="lm", color="red", lwd=1.5) +
   labs(x="Rent Predicted", y="Rent Actual")
 ```
-# What to Charge
+## Extra Credit
 
-Lastly we use our model to determine a range for what we can charge in rent for our building. The model the vairables available indicates we chould charge between \$12,160.37 and \$16,235.17 per month to rent out the building. Taking into account operating expenses and taxes, we pay \$13,540 to run the building. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we would have to rent the building for over \$13,540, which appears possible, based on the range indicated by the model.
-```{r}
-new_RentRate <- data.frame(Age=9, OperExp=13, VacRate=0, SqFt=40, Taxes=540, W2MiDT='No')
-predict(df_model, newdata=new_RentRate, interval="predict")
-```
-
-
-# Final Conclusion
-
-Can somebody else address this one? **Once you have built the final model, it must be evaluated in terms of its usefulness and relevance to the business problem, as well as its interpretability to others who may be interacting with it. Always ensure that it makes sense from the standpoint of the real-world dynamics it is intended to explain.**
-
-# Extra Credit
-
-Of course, to determine if there is a better fit model we would need to account for how all the vairables interacted with each other as well. THe first step is the create a model that reflects all variables and all variables * all variables.
+Of course, to determine if there is a better fit model we would need to account for how all the vairables interacted with each other as well. The first step is the create a model that reflects all variables and all variable interactions.
 
 This doesn't create a particularly percise model. While our Adjusted R^2 value has increased to 0.8428, our F-statistic has decreased to 36.38 and there are many variables that aren't significant.
 ```{r}
-library(MASS)
 model.full.int <- lm(RentRate ~ (Age + OperExp + VacRate + SqFt + W2MiDT)^2, data=comm_prop) 
 summary(model.full.int)
 ori_pred <- predict(model.full.int, newdata=new_RentRate, interval="predict")
 
 model_all <- lm(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:OperExp + Age:VacRate + Age:SqFt + Age:W2MiDT + OperExp:VacRate + OperExp:SqFt + OperExp:W2MiDT + VacRate:SqFt + VacRate:W2MiDT + SqFt:W2MiDT, data=comm_prop)
 ```
-## Restrict values
+## Restrict values manually
 
 To reduce overfitting and increase our F-statistic, we used stepwise regression and manually removed variables one at a time until all remaining variables had significant p-values.
 ```{r}
@@ -180,8 +167,72 @@ summary(model_7)
 
 predict(model_7, newdata=new_RentRate, interval="predict")
 ```
-## Analysis
+## Run backward stepwise regression
 
-The models showed generally decreasing p-values, but these reductions were marginal - difference of 0.0088. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The new range to charge for rent is \$13,984.76 - \$17,267.04, which would indicate we should rent out the building as it fully exceeds our break even point of \$13,540.
+We also ran the backward stepwise regression function and examined the results to compare them to our manual version. Interestingly, it came up with slightly different variables. The first noticable change is that the function kept Taxes instead of SqFt. Additionally, it kept Age:OperExp and OperExp:VacRate where our manual model recommended removing them.
 
-The updated model has also given us a tighter range. It decrases our initial range of \$4,074.80 down to an updated range of \$3,282.28. A difference of nearly $800.
+Manual variables: Age, OperExp, VacRate, SqFt, W2MiDT, Age:VacRate, OperExp:W2MiDT, SqFt:W2MiDT
+stepAIC variables: Age, OperExp, VacRate, Taxes, W2MiDT, Age:OperExp, Age:VacRate, OperExp:VacRate, OperExp:W2MiDT, Taxes:W2MiDT
+
+The result was that the model created by the function had a slightly better adjusted R^2 of 0.844 compared to 0.8358, but a significally worse F-statistic of 54.55 compared to 63.99. As such, we moved forward with our analysis using the model created using the manual method.
+```{r}
+model_step <- lm(RentRate ~ .*., data = comm_prop)
+stepAIC(model_step, direction = "backward")
+step_lm <- lm(RentRate ~ Age + OperExp + VacRate + Taxes + W2MiDT + Age:OperExp + Age:VacRate + OperExp:VacRate + OperExp:W2MiDT + Taxes:W2MiDT, data = comm_prop)
+summary(step_lm)
+```
+## Model Analysis
+
+The models showed generally decreasing p-values, but these reductions were marginal. The reduction was more than made up for by the increases in the F-statistic - a difference of 24.54. The updated model has also given us a tighter range. It decrases our initial range of \$4,074.80 down to an updated range of \$3,282.28. A difference of nearly $800.
+
+An analysis of the residuals shows that there is still no discernable pattern and even shows slightly less clumping than the model created from just single variables. The analysis of variance on both the single variable and manual stepwise models shows good significance. The significance for the OperExp:W2MiDT variable appears to fall outside the range of significance although it was within bounds when running the analysis from the coefficents. The fitted plot shows tighter grouping around the line, but still quite a bit of variance from the prediction.
+```{r}
+full.df <- fortify(df_model)
+ggplot(full.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Fitted Values", y="Residuals")
+
+step.df <- fortify(model_7)
+ggplot(step.df, aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, linetype=2) +
+  labs(x="Stepped Fitted Values", y="Residuals")
+
+shapiro.test(df_model$residuals)
+ncvTest(df_model)
+vif(df_model)
+
+shapiro.test(model_7$residuals)
+ncvTest(model_7)
+vif(model_7)
+
+ggplot(full.df, aes(x=.fitted, y=RentRate)) +
+  geom_point(size=2) +
+  geom_smooth(method="lm", color="red", lwd=1.5) +
+  labs(x="Rent Predicted single variable", y="Rent Actual")
+
+ggplot(step.df, aes(x=.fitted, y=RentRate)) +
+  geom_point(size=2) +
+  geom_smooth(method="lm", color="blue", lwd=1.5) +
+  labs(x="Rent Predicted stepwise", y="Rent Actual")
+
+single_variables <- aov(RentRate ~ Age + OperExp + W2MiDT + SqFt, data = comm_prop)
+stepwise_variables <- aov(RentRate ~ Age + OperExp + VacRate + SqFt + W2MiDT + Age:VacRate + OperExp:W2MiDT + SqFt:W2MiDT, data = comm_prop)
+
+summary(single_variables)
+summary(stepwise_variables)
+```
+# What to Charge
+
+Lastly we use our model to determine a range for what we can charge in rent for our building. For this we used the model created by the manual stepwise regression. The model the vairables available indicates we chould charge between \$13,984.76 - \$17,267.04 per month to rent out the building. Taking into account operating expenses and taxes, we pay \$13,540 to run the building. There may be additional expenses we should factor in, such as maintenance expenses for upkeep and repair. However, based on the current information, we could easily rent the building for over \$13,540.
+```{r}
+new_RentRate <- data.frame(Age=9, OperExp=13, VacRate=0, SqFt=40, Taxes=540, W2MiDT='No')
+predict(df_model, newdata=new_RentRate, interval="predict")
+```
+
+
+# Final Conclusion
+
+Can somebody else address this one? **Once you have built the final model, it must be evaluated in terms of its usefulness and relevance to the business problem, as well as its interpretability to others who may be interacting with it. Always ensure that it makes sense from the standpoint of the real-world dynamics it is intended to explain.**
+
